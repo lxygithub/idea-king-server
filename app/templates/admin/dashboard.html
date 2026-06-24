@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}概览{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>系统概览</h1>
+</div>
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-number">{{ user_count }}</div>
+        <div class="stat-label">用户总数</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ file_count }}</div>
+        <div class="stat-label">文件总数</div>
+    </div>
+</div>
+{% endblock %}

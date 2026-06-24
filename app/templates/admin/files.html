@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}文件管理{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>所有文件</h1>
+    <span style="color:var(--gray-400);font-size:14px">最新 200 条</span>
+</div>
+
+<div class="table-wrap">
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>用户</th>
+            <th>文件名</th>
+            <th>类型</th>
+            <th>大小</th>
+            <th>S3</th>
+            <th>预览 / 下载</th>
+            <th>接收时间</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for f in files %}
+        <tr>
+            <td style="font-size:11px;color:var(--gray-400);font-family:monospace">{{ f.id[:8] }}..</td>
+            <td><span class="badge badge-user">#{{ f.user_id }}</span></td>
+            <td><strong>{{ f.name }}</strong></td>
+            <td>{{ f.type }}</td>
+            <td>{% if f.fileSize %}{{ (f.fileSize / 1024)|round(1) }} KB{% else %}<span style="color:var(--gray-400)">-</span>{% endif %}</td>
+            <td>{% if f.s3Key %}<span class="badge badge-s3-yes">已上传</span>{% else %}<span class="badge badge-s3-no">未上传</span>{% endif %}</td>
+            <td>
+                {% if f.type == 'image' and f.s3Key %}
+                <a href="/api/files/{{ f.id }}/download?token=admin" target="_blank" class="thumb-grid">
+                    <img src="/api/files/{{ f.id }}/download?token=admin" loading="lazy" alt="{{ f.name }}">
+                </a>
+                {% elif f.s3Key %}
+                <a href="/api/files/{{ f.id }}/download?token=admin" class="btn btn-sm">⬇ 下载</a>
+                {% else %}
+                <span style="color:var(--gray-400)">-</span>
+                {% endif %}
+            </td>
+            <td style="font-size:12px;color:var(--gray-500)">{{ f.receivedAt|string|truncate(19, True, '') if f.receivedAt else '-' }}</td>
+            <td>
+                <div class="actions">
+                    {% if f.s3Key %}
+                    <a href="/api/files/{{ f.id }}/download?token=admin" class="btn btn-xs">⬇</a>
+                    {% endif %}
+                    <form method="post" action="/admin/files/{{ f.id }}/delete" style="display:inline" onsubmit="return confirm('确定删除文件 #{{ f.id }}?')">
+                        <button type="submit" class="btn btn-xs btn-danger">删除</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" class="empty">暂无文件</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

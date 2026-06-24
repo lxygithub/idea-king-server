@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ view_user.username }} - 用户详情{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>用户: {{ view_user.username }}</h1>
+    <a href="/admin/users" class="btn">← 返回用户列表</a>
+</div>
+
+<div class="stats-row" style="margin-bottom:24px">
+    <div class="stat-card">
+        <div class="stat-number" style="font-size:28px">{{ view_user.id }}</div>
+        <div class="stat-label">用户 ID</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" style="font-size:18px;font-weight:600">
+            {% if view_user.is_admin %}<span class="badge badge-admin" style="font-size:14px">管理员</span>{% else %}<span class="badge badge-user">普通用户</span>{% endif %}
+        </div>
+        <div class="stat-label">角色</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" style="font-size:20px;font-weight:600;color:var(--gray-600)">{{ view_user.created_at }}</div>
+        <div class="stat-label">注册时间</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ files|length }}</div>
+        <div class="stat-label">文件数</div>
+    </div>
+</div>
+
+{% if request.query_params.get('error') == 'admin_cannot_change_username' %}
+<div class="alert alert-error">管理员不可修改用户名</div>
+{% endif %}
+
+<div class="section">
+    <h3 class="section-title">账号管理</h3>
+    <div class="stats-row" style="grid-template-columns:1fr 1fr">
+        <!-- Change Password -->
+        <div class="card">
+            <div class="card-header">修改密码</div>
+            <div class="card-body">
+                <form method="post" action="/admin/users/{{ view_user.id }}/change-password">
+                    <div class="form-row">
+                        <input type="password" name="new_password" placeholder="新密码(至少6位)" required minlength="6" style="flex:1">
+                        <button type="submit" class="btn btn-primary">确认</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Change Username (non-admin only) -->
+        {% if not view_user.is_admin %}
+        <div class="card">
+            <div class="card-header">修改用户名</div>
+            <div class="card-body">
+                <form method="post" action="/admin/users/{{ view_user.id }}/change-username">
+                    <div class="form-row">
+                        <input type="text" name="new_username" placeholder="新用户名(至少3位)" required minlength="3" style="flex:1">
+                        <button type="submit" class="btn btn-primary">确认</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="section">
+    <h3 class="section-title">文件列表 <span style="color:var(--gray-400);font-weight:400;font-size:14px">共 {{ files|length }} 个文件</span></h3>
+    <div class="table-wrap">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>文件名</th>
+                <th>类型</th>
+                <th>大小</th>
+                <th>S3 状态</th>
+                <th>接收时间</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for f in files %}
+            <tr>
+                <td><strong>{{ f.name }}</strong></td>
+                <td>{{ f.type }}</td>
+                <td>{% if f.fileSize %}{{ (f.fileSize / 1024)|round(1) }} KB{% else %}<span style="color:var(--gray-400)">-</span>{% endif %}</td>
+                <td>{% if f.s3Key %}<span class="badge badge-s3-yes">已上传</span>{% else %}<span class="badge badge-s3-no">未上传</span>{% endif %}</td>
+                <td style="color:var(--gray-500);font-size:13px">{{ f.receivedAt }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="empty">暂无文件</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

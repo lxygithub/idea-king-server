@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}用户管理{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>用户列表</h1>
+    <details class="collapsible">
+        <summary class="btn btn-primary">创建用户</summary>
+        <div class="collapsible-body">
+            <form method="post" action="/admin/users/create">
+                <div class="form-row">
+                    <input type="text" name="username" placeholder="用户名" required minlength="3" style="flex:1;min-width:140px">
+                    <input type="password" name="password" placeholder="密码" required minlength="6" style="flex:1;min-width:140px">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="is_admin"> 管理员
+                    </label>
+                    <button type="submit" class="btn btn-success">创建</button>
+                </div>
+            </form>
+        </div>
+    </details>
+</div>
+
+{% if error %}
+<div class="alert alert-error">{{ error }}</div>
+{% endif %}
+
+{% if request.query_params.get('error') == 'self' %}
+<div class="alert alert-error">不能删除自己的账号</div>
+{% endif %}
+
+<div class="table-wrap">
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>用户名</th>
+            <th>角色</th>
+            <th>注册时间</th>
+            <th>文件</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for u in users %}
+        <tr>
+            <td style="color:var(--gray-400)">{{ u.id }}</td>
+            <td><strong>{{ u.username }}</strong></td>
+            <td>{% if u.is_admin %}<span class="badge badge-admin">管理员</span>{% else %}<span class="badge badge-user">用户</span>{% endif %}</td>
+            <td style="color:var(--gray-500);font-size:13px">{{ u.created_at }}</td>
+            <td><a href="/admin/users/{{ u.id }}" class="btn btn-sm">查看文件</a></td>
+            <td>
+                <div class="actions">
+                    <a href="/admin/users/{{ u.id }}" class="btn btn-sm">详情</a>
+                    {% if u.id != admin_user_id %}
+                    <form method="post" action="/admin/users/{{ u.id }}/delete" style="display:inline" onsubmit="return confirm('确定删除用户 {{ u.username }}? 其所有文件也将被永久删除!')">
+                        <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

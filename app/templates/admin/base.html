@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}管理后台{% endblock %} - 点子王</title>
+    <link rel="stylesheet" href="/static/admin/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/admin/dashboard" class="nav-brand">
+            点子王 管理后台
+        </a>
+        <div class="nav-links">
+            <a href="/admin/dashboard">概览</a>
+            <a href="/admin/users">用户</a>
+            <a href="/admin/files">文件</a>
+            {% if admin_username %}
+            <span class="nav-user">{{ admin_username }}</span>
+            <a href="/admin/logout" class="logout-link">退出</a>
+            {% endif %}
+        </div>
+    </nav>
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
