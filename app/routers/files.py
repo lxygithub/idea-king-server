@@ -4,7 +4,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import FileResponse
-from sqlalchemy import text
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -94,6 +94,8 @@ async def download_file(
     db: AsyncSession = Depends(get_db),
 ):
     """Download a file from S3 through the API."""
+    import sys
+    print(f"[download] token_set={token is not None} user_set={user is not None}", file=sys.stderr)
     # Find record from shared table or per-user table
     # For simplicity, query shared table first (has user_id)
     record = None
@@ -133,6 +135,8 @@ async def download_file(
     is_authorized = False
     if user and any(r["id"] == file_id for r in (await file_service.get_user_files(db, user.id))):
         is_authorized = True
+    elif user and user.is_admin:
+        is_authorized = True
     elif request.session.get("admin_user_id"):
         is_authorized = True
 
@@ -144,7 +148,11 @@ async def download_file(
         raise HTTPException(status_code=502, detail="S3 download failed")
 
     media_type = record.get("mimeType") or "application/octet-stream"
-    return FileResponse(tmp_path, media_type=media_type, filename=record.get("name", "file"))
+    is_media = media_type and (media_type.startswith("image/") or media_type.startswith("video/") or media_type.startswith("audio/"))
+    disp = "inline" if is_media else "attachment"
+    nm = record.get("name", "file")
+    hdr = {"Content-Disposition": disp + "; filename=" + nm}
+    return FileResponse(tmp_path, media_type=media_type, filename=nm, headers=hdr)
 
 
 @router.post("/delete", response_model=DeleteResponse)

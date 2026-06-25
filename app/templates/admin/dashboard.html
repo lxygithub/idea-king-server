@@ -2,8 +2,10 @@
 {% block title %}概览{% endblock %}
 {% block content %}
 <div class="page-header">
-    <h1>系统概览</h1>
+    <h1>{% if is_admin %}系统概览{% else %}我的概览{% endif %}</h1>
 </div>
+
+{% if is_admin %}
 <div class="stats-row">
     <div class="stat-card">
         <div class="stat-number">{{ user_count }}</div>
@@ -14,4 +16,15 @@
         <div class="stat-label">文件总数</div>
     </div>
 </div>
+{% else %}
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-number">{{ file_count }}</div>
+        <div class="stat-label">我的文件</div>
+    </div>
+</div>
+<div style="margin-top:20px">
+    <a href="/admin/users/{{ user_id }}" class="btn btn-primary">查看我的文件</a>
+</div>
+{% endif %}
 {% endblock %}

@@ -3,7 +3,11 @@
 {% block content %}
 <div class="page-header">
     <h1>用户: {{ view_user.username }}</h1>
+    {% if request.session.get('admin_is_admin') %}
     <a href="/admin/users" class="btn">← 返回用户列表</a>
+    {% else %}
+    <a href="/admin/dashboard" class="btn">← 返回概览</a>
+    {% endif %}
 </div>
 
 <div class="stats-row" style="margin-bottom:24px">
@@ -31,10 +35,10 @@
 <div class="alert alert-error">管理员不可修改用户名</div>
 {% endif %}
 
+{% if request.session.get('admin_is_admin') %}
 <div class="section">
     <h3 class="section-title">账号管理</h3>
     <div class="stats-row" style="grid-template-columns:1fr 1fr">
-        <!-- Change Password -->
         <div class="card">
             <div class="card-header">修改密码</div>
             <div class="card-body">
@@ -46,8 +50,6 @@
                 </form>
             </div>
         </div>
-
-        <!-- Change Username (non-admin only) -->
         {% if not view_user.is_admin %}
         <div class="card">
             <div class="card-header">修改用户名</div>
@@ -63,34 +65,162 @@
         {% endif %}
     </div>
 </div>
+{% endif %}
 
 <div class="section">
     <h3 class="section-title">文件列表 <span style="color:var(--gray-400);font-weight:400;font-size:14px">共 {{ files|length }} 个文件</span></h3>
+
+<div class="batch-bar" id="batchBar">
+    <input type="checkbox" class="checkbox-all" id="checkAll" onchange="toggleAll(this)">
+    <span class="count">已选 <strong id="selectedCount">0</strong> 项</span>
+    <form method="post" action="/admin/files/batch-delete" style="display:inline" id="batchForm" onsubmit="return confirmBatch()">
+        <input type="hidden" name="file_ids" id="batchIds">
+        <button type="submit" class="btn btn-sm btn-danger">🗑 批量删除</button>
+    </form>
+    <button class="btn btn-sm" onclick="clearSelection()">取消选择</button>
+</div>
+
     <div class="table-wrap">
     <table class="table">
         <thead>
             <tr>
+                <th class="checkbox-col"><input type="checkbox" class="checkbox-all" onchange="toggleAll(this)"></th>
+                <th style="width:36px">#</th>
+                <th style="width:40px"></th>
                 <th>文件名</th>
                 <th>类型</th>
                 <th>大小</th>
-                <th>S3 状态</th>
+                <th>标签</th>
+                <th style="width:60px">状态</th>
                 <th>接收时间</th>
+                <th style="width:130px">操作</th>
             </tr>
         </thead>
         <tbody>
             {% for f in files %}
             <tr>
-                <td><strong>{{ f.name }}</strong></td>
-                <td>{{ f.type }}</td>
-                <td>{% if f.fileSize %}{{ (f.fileSize / 1024)|round(1) }} KB{% else %}<span style="color:var(--gray-400)">-</span>{% endif %}</td>
-                <td>{% if f.s3Key %}<span class="badge badge-s3-yes">已上传</span>{% else %}<span class="badge badge-s3-no">未上传</span>{% endif %}</td>
-                <td style="color:var(--gray-500);font-size:13px">{{ f.receivedAt }}</td>
+                <td class="checkbox-col"><input type="checkbox" class="checkbox-item" value="{{ f.id }}" onchange="updateBatchBar()"></td>
+                <td><span class="row-num">{{ loop.index }}</span></td>
+                <td>
+                    {% if f.type == 'image' and f.s3Key %}
+                    <img src="/api/files/{{ f.id }}/download?token=admin" class="file-thumb" loading="lazy" onclick="openPreview('{{ f.id }}','image','{{ f.name|e }}')" style="cursor:pointer">
+                    {% elif f.type == 'video' %}
+                    <span class="file-icon file-icon-video">▶</span>
+                    {% elif f.type == 'audio' %}
+                    <span class="file-icon file-icon-audio">♪</span>
+                    {% elif f.type == 'text' %}
+                    <span class="file-icon file-icon-text">T</span>
+                    {% elif f.mimeType and f.mimeType.startswith('application/pdf') %}
+                    <span class="file-icon file-icon-pdf">PDF</span>
+                    {% else %}
+                    <span class="file-icon file-icon-default">📄</span>
+                    {% endif %}
+                </td>
+                <td><strong class="file-name">{{ f.name }}</strong></td>
+                <td>
+                    {% set tc = 'type-image' if f.type == 'image' else 'type-video' if f.type == 'video' else 'type-audio' if f.type == 'audio' else 'type-text' if f.type == 'text' else 'type-other' %}
+                    <span class="type-badge {{ tc }}">{{ f.type }}</span>
+                </td>
+                <td class="cell-muted">
+                    {% if f.fileSize %}
+                    {% if f.fileSize >= 1048576 %}{{ (f.fileSize / 1048576)|round(1) }} MB
+                    {% elif f.fileSize >= 1024 %}{{ (f.fileSize / 1024)|round(1) }} KB
+                    {% else %}{{ f.fileSize }} B{% endif %}
+                    {% else %}-{% endif %}
+                </td>
+                <td>
+                    {% if f.tags and f.tags|length > 0 %}
+                    <div class="tags-wrap">
+                        {% for t in f.tags[:3] %}
+                        <span class="tag">{{ t }}</span>
+                        {% endfor %}
+                        {% if f.tags|length > 3 %}
+                        <span class="tag-more">+{{ f.tags|length - 3 }}</span>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <span class="cell-muted">-</span>
+                    {% endif %}
+                </td>
+                <td style="text-align:center;font-size:20px">{% if f.s3Key %}☁️{% else %}❌{% endif %}</td>
+                <td class="cell-muted" style="font-size:12px;white-space:nowrap">
+                    {{ f.receivedAt|string|truncate(19, True, '') if f.receivedAt else '-' }}
+                </td>
+                <td>
+                    <div class="actions">
+                        {% if f.type == 'image' and f.s3Key %}
+                        <button class="btn btn-xs" onclick="openPreview('{{ f.id }}','image','{{ f.name|e }}')" title="预览">👁</button>
+                        {% elif f.type == 'video' and f.s3Key %}
+                        <button class="btn btn-xs" onclick="openPreview('{{ f.id }}','video','{{ f.name|e }}')" title="播放">▶</button>
+                        {% elif f.type == 'audio' and f.s3Key %}
+                        <button class="btn btn-xs" onclick="openPreview('{{ f.id }}','audio','{{ f.name|e }}')" title="播放">♪</button>
+                        {% elif f.s3Key and f.type == 'text' %}
+                        <button class="btn btn-xs" onclick="openPreview('{{ f.id }}','text','{{ f.name|e }}')" title="查看">📝</button>
+                        {% elif f.s3Key %}
+                        <a href="/api/files/{{ f.id }}/download?token=admin" class="btn btn-xs" title="下载">⬇</a>
+                        {% endif %}
+                        <button class="btn btn-xs btn-edit" title="编辑" data-id="{{ f.id }}" data-name="{{ f.name|e }}" data-tags='{{ f.tags|tojson if f.tags else "[]" }}'>✎</button>
+                        {% if request.session.get('admin_is_admin') %}
+                        <form method="post" action="/admin/files/{{ f.id }}/delete" style="display:inline" onsubmit="return confirm('确定删除?')">
+                            <button type="submit" class="btn btn-xs btn-danger" title="删除">🗑</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </td>
             </tr>
             {% else %}
-            <tr><td colspan="5" class="empty">暂无文件</td></tr>
+            <tr><td colspan="10" class="empty">暂无文件</td></tr>
             {% endfor %}
         </tbody>
     </table>
     </div>
 </div>
+
+{% include "modals.html" %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.btn-edit').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.getElementById('editFileId').value = this.getAttribute('data-id');
+            document.getElementById('editName').value = this.getAttribute('data-name');
+            try {
+                var arr = JSON.parse(this.getAttribute('data-tags'));
+                document.getElementById('editTags').value = Array.isArray(arr) ? arr.join(', ') : '';
+            } catch(e) {
+                document.getElementById('editTags').value = '';
+            }
+            document.getElementById('editModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        });
+    });
+});
+function toggleAll(src) {
+    var checked = src.checked; // 'checkAll').checked;
+    document.querySelectorAll('.checkbox-item').forEach(function(cb) { cb.checked = checked; });
+    updateBatchBar();
+}
+function updateBatchBar() {
+    var checked = document.querySelectorAll('.checkbox-item:checked');
+    var bar = document.getElementById('batchBar');
+    if (checked.length > 0) {
+        bar.classList.add('visible');
+        document.getElementById('selectedCount').textContent = checked.length;
+    } else {
+        bar.classList.remove('visible');
+    }
+}
+function clearSelection() {
+    document.querySelectorAll('.checkbox-item, .checkbox-all').forEach(function(cb) { cb.checked = false; });
+    document.getElementById('batchBar').classList.remove('visible');
+}
+function confirmBatch() {
+    var checked = document.querySelectorAll('.checkbox-item:checked');
+    if (checked.length === 0) { alert('请先选择文件'); return false; }
+    if (!confirm('确定删除选中的 ' + checked.length + ' 个文件?')) return false;
+    var ids = [];
+    checked.forEach(function(cb) { ids.push(cb.value); });
+    document.getElementById('batchIds').value = ids.join(',');
+    return true;
+}
+</script>
 {% endblock %}

@@ -541,3 +541,153 @@ a:hover { color: var(--primary-dark); }
   .info-grid { grid-template-columns: 1fr; gap: 4px; }
   .login-box { padding: 28px 20px; }
 }
+
+/* ===========================
+   File Icons & Thumbnails
+   =========================== */
+.file-thumb {
+  width: 40px; height: 40px; object-fit: cover;
+  border-radius: 6px; border: 1px solid var(--gray-200);
+  transition: transform var(--transition);
+}
+.file-thumb:hover { transform: scale(1.2); }
+.file-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 8px;
+  font-size: 14px; font-weight: 700;
+}
+.file-icon-video { background: #fef3c7; color: #d97706; }
+.file-icon-audio { background: #e0e7ff; color: #4f46e5; }
+.file-icon-text { background: #e0f2fe; color: #0284c7; font-style: italic; font-family: serif; }
+.file-icon-pdf { background: #fee2e2; color: #dc2626; font-size: 10px; }
+.file-icon-default { background: var(--gray-100); color: var(--gray-500); font-size: 18px; }
+
+/* ===========================
+   Type Badges
+   =========================== */
+.type-badge {
+  display: inline-block; padding: 2px 10px;
+  border-radius: 9999px; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.03em;
+}
+.type-image { background: #ecfdf5; color: #059669; }
+.type-video { background: #fef3c7; color: #d97706; }
+.type-audio { background: #e0e7ff; color: #4f46e5; }
+.type-text  { background: #e0f2fe; color: #0284c7; }
+.type-other { background: var(--gray-100); color: var(--gray-500); }
+
+/* ===========================
+   Tags
+   =========================== */
+.tags-wrap { display: flex; gap: 4px; flex-wrap: wrap; }
+.tag {
+  display: inline-block; padding: 1px 8px; border-radius: 4px;
+  background: var(--primary-bg); color: var(--primary);
+  font-size: 11px; font-weight: 500;
+}
+.tag-more {
+  display: inline-block; padding: 1px 8px; border-radius: 4px;
+  background: var(--gray-100); color: var(--gray-500);
+  font-size: 11px;
+}
+
+/* ===========================
+   Muted cell
+   =========================== */
+.cell-muted { color: var(--gray-500); }
+
+/* ===========================
+   File name
+   =========================== */
+.file-name { font-size: 14px; color: var(--gray-800); }
+
+/* ===========================
+   Modals
+   =========================== */
+.modal-overlay {
+  display: none; position: fixed; z-index: 999;
+  left: 0; top: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.15s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.modal-content {
+  background: #fff; border-radius: var(--radius);
+  box-shadow: var(--shadow-lg); max-width: 90vw;
+  max-height: 90vh; overflow: hidden;
+  display: flex; flex-direction: column;
+  animation: slideUp 0.2s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.modal-preview { max-width: 800px; width: 90vw; }
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 20px; border-bottom: 1px solid var(--gray-100);
+  font-weight: 600; font-size: 16px;
+}
+.modal-close {
+  width: 32px; height: 32px; border: none; background: var(--gray-100);
+  border-radius: 50%; cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--gray-500); transition: all var(--transition);
+}
+.modal-close:hover { background: var(--gray-200); color: var(--gray-800); }
+.modal-body { padding: 20px; overflow: auto; flex: 1; }
+.modal-footer {
+  display: flex; gap: 8px; justify-content: flex-end;
+  padding: 12px 20px; border-top: 1px solid var(--gray-100);
+}
+
+/* ===========================
+   Action button tweaks
+   =========================== */
+.actions .btn-xs { font-size: 11px; padding: 3px 8px; }
+
+/* ===========================
+   Zebra striping + Row numbers
+   =========================== */
+.table tbody tr:nth-child(even) { background: #f0f4ff; }
+.table tbody tr:nth-child(even):hover { background: #e2e8f0; }
+.row-num {
+  display: inline-block;
+  width: 24px; height: 24px;
+  line-height: 24px; text-align: center;
+  border-radius: 4px;
+  background: var(--gray-100);
+  color: var(--gray-500);
+  font-size: 11px; font-weight: 600;
+  font-family: monospace;
+}
+
+/* ===========================
+   Batch delete
+   =========================== */
+.batch-bar {
+  display: none;
+  align-items: center; gap: 12px;
+  padding: 10px 16px;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.batch-bar.visible { display: flex; }
+.batch-bar .count {
+  font-size: 14px; font-weight: 600;
+  color: var(--gray-700);
+}
+.checkbox-col { width: 36px; }
+.checkbox-all, .checkbox-item {
+  width: 16px; height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}

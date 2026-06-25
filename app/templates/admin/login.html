@@ -14,7 +14,7 @@
         <h1>点子王</h1>
         <p class="login-subtitle">管理后台</p>
         {% if request.query_params.get('error') %}
-        <div class="alert alert-error">用户名或密码错误，或无管理员权限</div>
+        <div class="alert alert-error">用户名或密码错误</div>
         {% endif %}
         <form method="post">
             <div class="form-group">

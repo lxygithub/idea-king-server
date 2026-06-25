@@ -8,13 +8,13 @@
 </head>
 <body>
     <nav class="navbar">
-        <a href="/admin/dashboard" class="nav-brand">
-            点子王 管理后台
-        </a>
+        <a href="/admin/dashboard" class="nav-brand">点子王 管理后台</a>
         <div class="nav-links">
             <a href="/admin/dashboard">概览</a>
+            {% if request.session.get('admin_is_admin') %}
             <a href="/admin/users">用户</a>
             <a href="/admin/files">文件</a>
+            {% endif %}
             {% if admin_username %}
             <span class="nav-user">{{ admin_username }}</span>
             <a href="/admin/logout" class="logout-link">退出</a>

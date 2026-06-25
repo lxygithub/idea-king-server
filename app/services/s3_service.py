@@ -34,7 +34,7 @@ def sanitize_filename(name: str) -> str:
 
 def _storage_id(user_id: int) -> int:
     """Opaque numeric ID for S3 paths. 10000000 = admin, +1 per user."""
-    return user_id + 999
+    return user_id
 
 
 def generate_s3_key(original_name: str, user_id: int | None = None, dt: datetime | None = None) -> str:

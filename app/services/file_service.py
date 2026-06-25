@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 def _storage_id(user_id: int) -> int:
-    return user_id + 999
+    return user_id
 
 
 def _table_name(user_id: int) -> str:
@@ -18,7 +18,7 @@ def _table_name(user_id: int) -> str:
 _COLS = (
     "id", "name", "type", "localPath", "textContent", "sourceUri",
     "receivedAt", "mimeType", "fileSize", "s3Key", "uploadProgress",
-    "uploadError", "uploadId", "uploadedParts", "tags", "description"
+    "uploadError", "uploadId", "uploadedParts", "tags", "description", "thumbS3Key"
 )
 _COLS_STR = ", ".join(_COLS)
 _PLACEHOLDERS = ", ".join(f":{c}" for c in _COLS)
@@ -41,7 +41,8 @@ _CREATE_SQL = """CREATE TABLE IF NOT EXISTS {table} (
   uploadId VARCHAR(255),
   uploadedParts TEXT,
   tags TEXT,
-  description TEXT
+  description TEXT,
+  thumbS3Key VARCHAR(500)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"""
 
 
@@ -98,6 +99,19 @@ async def create_file(
     """Insert file into per-user table."""
     table = _table_name(user_id)
     await ensure_table(db, user_id)
+
+    # Preserve thumbS3Key from existing record if not in incoming data
+    if "thumbS3Key" not in data or data.get("thumbS3Key") is None:
+        try:
+            existing = await db.execute(
+                text(f"SELECT thumbS3Key FROM {table} WHERE id = :id"),
+                {"id": data.get("id", "")},
+            )
+            row = existing.mappings().one_or_none()
+            if row and row.get("thumbS3Key"):
+                data["thumbS3Key"] = row["thumbS3Key"]
+        except Exception:
+            pass
 
     # Parse receivedAt
     if "receivedAt" in data and isinstance(data["receivedAt"], str):

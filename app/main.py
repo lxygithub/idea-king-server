@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import settings
@@ -42,9 +43,14 @@ app.include_router(admin.router)
 
 
 @app.get("/")
-async def root():
-    return {
-        "name": "点子王 API",
-        "version": "2.0.0",
-        "docs": "/docs",
-    }
+async def root(request: Request):
+    return RedirectResponse(url="/admin/dashboard", status_code=303)
+
+@app.api_route("/{path:path}", methods=["GET", "POST", "HEAD"])
+async def global_catch_all(path: str):
+    """Catch-all: redirect unknown paths to admin login."""
+    if path.startswith(("api/", "static/")):
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=404, content={"detail": "Not found"})
+    return RedirectResponse(url="/admin/login", status_code=303)
+
