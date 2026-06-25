@@ -70,15 +70,22 @@ def row_to_dict(row) -> dict[str, Any]:
 # ===== CRUD =====
 
 async def get_user_files(
-    db: AsyncSession, user_id: int
+    db: AsyncSession, user_id: int, page: int = 0, size: int = 0,
+    start_date: str | None = None, end_date: str | None = None,
 ) -> list[dict]:
-    """Fetch files from per-user table."""
+    """Fetch files from per-user table, with optional pagination and date filter."""
     await ensure_table(db, user_id)
     table = _table_name(user_id)
     try:
-        result = await db.execute(
-            text(f"SELECT {_COLS_STR} FROM {table} ORDER BY receivedAt DESC")
-        )
+        sql = f"SELECT {_COLS_STR} FROM {table} WHERE 1=1"
+        if start_date:
+            sql += f" AND receivedAt >= '{start_date}T00:00:00'"
+        if end_date:
+            sql += f" AND receivedAt <= '{end_date}T23:59:59'"
+        sql += " ORDER BY receivedAt DESC"
+        if size > 0:
+            sql += f" LIMIT {size} OFFSET {page * size}"
+        result = await db.execute(text(sql))
         return [row_to_dict(r) for r in result.mappings().all()]
     except Exception:
         return []
@@ -180,11 +187,16 @@ async def clear_user_files(
 
 
 async def count_user_files(
-    db: AsyncSession, user_id: int
+    db: AsyncSession, user_id: int, start_date: str | None = None, end_date: str | None = None
 ) -> int:
     table = _table_name(user_id)
     try:
-        result = await db.execute(text(f"SELECT COUNT(*) AS cnt FROM {table}"))
+        sql = f"SELECT COUNT(*) AS cnt FROM {table} WHERE 1=1"
+        if start_date:
+            sql += f" AND receivedAt >= '{start_date}T00:00:00'"
+        if end_date:
+            sql += f" AND receivedAt <= '{end_date}T23:59:59'"
+        result = await db.execute(text(sql))
         row = result.one()
         return row[0] if row else 0
     except Exception:

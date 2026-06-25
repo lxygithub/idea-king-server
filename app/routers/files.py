@@ -24,11 +24,16 @@ router = APIRouter(prefix="/api/files", tags=["files"])
 
 @router.get("")
 async def list_files(
+    page: int = 0,
+    size: int = 20,
+    start_date: str | None = None,
+    end_date: str | None = None,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    records = await file_service.get_user_files(db, user.id)
-    return {"files": records}
+    records = await file_service.get_user_files(db, user.id, page=page, size=size, start_date=start_date, end_date=end_date)
+    total = await file_service.count_user_files(db, user.id, start_date=start_date, end_date=end_date)
+    return {"files": records, "total": total}
 
 
 @router.post("/sync", response_model=SyncResponse)
