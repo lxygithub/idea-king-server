@@ -94,6 +94,15 @@ async def download_file(
     db: AsyncSession = Depends(get_db),
 ):
     """Download a file from S3 through the API."""
+    # Support JWT via query parameter (for external apps/browsers)
+    if token and not user:
+        from app.services.auth_service import decode_access_token
+        p = decode_access_token(token)
+        if p:
+            uid = int(p.get("sub", 0))
+            r = await db.execute(select(User).where(User.id == uid))
+            user = r.scalar_one_or_none()
+
     import sys
     print(f"[download] token_set={token is not None} user_set={user is not None}", file=sys.stderr)
     # Find record from shared table or per-user table
