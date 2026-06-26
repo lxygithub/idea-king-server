@@ -28,7 +28,6 @@ async def list_files(
     size: int = 20,
     start_date: str | None = None,
     end_date: str | None = None,
-    from fastapi import Query
     file_type: str | None = Query(None, alias="type"),
     search: str | None = None,
     user: User = Depends(get_current_user),
