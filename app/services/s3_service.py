@@ -8,6 +8,7 @@ from datetime import datetime
 
 from minio import Minio
 from minio.error import S3Error
+import urllib3
 
 from app.config import settings
 
@@ -17,12 +18,17 @@ _client: Minio | None = None
 def _get_client() -> Minio:
     global _client
     if _client is None:
+        _http_client = urllib3.PoolManager(
+            timeout=urllib3.Timeout(connect=10, read=300),
+            maxsize=32,
+        )
         _client = Minio(
             settings.s3_endpoint,
             access_key=settings.s3_access_key,
             secret_key=settings.s3_secret_key,
             region=settings.s3_region,
-            secure=False,  # HTTP, not HTTPS
+            secure=False,
+            http_client=_http_client,
         )
     return _client
 

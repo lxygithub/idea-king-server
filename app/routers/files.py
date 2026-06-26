@@ -151,7 +151,7 @@ async def init_multipart_upload(
         "minio_uid": minio_uid,
         "parts": [],
     }
-    return {"upload_id": upload_id, "s3_key": s3_key, "part_size": 5 * 1024 * 1024}
+    return {"upload_id": upload_id, "s3_key": s3_key, "part_size": 50 * 1024 * 1024}
 
 
 @router.post("/upload/{upload_id}/part")
