@@ -249,11 +249,9 @@ async def download_file(
     is_media = media_type and (media_type.startswith("image/") or media_type.startswith("video/") or media_type.startswith("audio/"))
     disp = "inline" if is_media else "attachment"
     nm = record.get("name", "file")
-    try:
-        nm_ascii = nm.encode("ascii", errors="replace").decode("ascii")
-    except:
-        nm_ascii = "file"
-    hdr = {"Content-Disposition": disp + "; filename="" + nm_ascii + """}
+    from urllib.parse import quote
+    nm_ascii = nm.encode("ascii", errors="replace").decode("ascii")
+    hdr = {"Content-Disposition": disp + "; filename="" + nm_ascii + ""; filename*=UTF-8''" + quote(nm)}
     return FileResponse(tmp_path, media_type=media_type, filename=nm, headers=hdr)
 
 

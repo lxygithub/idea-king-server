@@ -118,18 +118,19 @@ async def create_file(
     table = _table_name(user_id)
     await ensure_table(db, user_id)
 
-    # Preserve thumbS3Key from existing record if not in incoming data
-    if "thumbS3Key" not in data or data.get("thumbS3Key") is None:
-        try:
-            existing = await db.execute(
-                text(f"SELECT thumbS3Key FROM {table} WHERE id = :id"),
-                {"id": data.get("id", "")},
-            )
-            row = existing.mappings().one_or_none()
-            if row and row.get("thumbS3Key"):
-                data["thumbS3Key"] = row["thumbS3Key"]
-        except Exception:
-            pass
+    # Preserve thumbS3Key and s3Key from existing record if not in incoming data
+    for key in ("thumbS3Key", "s3Key"):
+        if key not in data or data.get(key) is None:
+            try:
+                existing = await db.execute(
+                    text(f"SELECT {key} FROM {table} WHERE id = :id"),
+                    {"id": data.get("id", "")},
+                )
+                row = existing.mappings().one_or_none()
+                if row and row.get(key):
+                    data[key] = row[key]
+            except Exception:
+                pass
 
     # Parse receivedAt
     if "receivedAt" in data and isinstance(data["receivedAt"], str):
