@@ -2,7 +2,7 @@ import json
 import os
 import uuid
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, Query, Depends, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,11 +28,21 @@ async def list_files(
     size: int = 20,
     start_date: str | None = None,
     end_date: str | None = None,
+    from fastapi import Query
+    file_type: str | None = Query(None, alias="type"),
+    search: str | None = None,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    records = await file_service.get_user_files(db, user.id, page=page, size=size, start_date=start_date, end_date=end_date)
-    total = await file_service.count_user_files(db, user.id, start_date=start_date, end_date=end_date)
+    records = await file_service.get_user_files(
+        db, user.id, page=page, size=size,
+        start_date=start_date, end_date=end_date,
+        file_type=file_type, search=search,
+    )
+    total = await file_service.count_user_files(
+        db, user.id, start_date=start_date, end_date=end_date,
+        file_type=file_type, search=search,
+    )
     return {"files": records, "total": total}
 
 

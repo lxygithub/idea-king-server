@@ -72,8 +72,9 @@ def row_to_dict(row) -> dict[str, Any]:
 async def get_user_files(
     db: AsyncSession, user_id: int, page: int = 0, size: int = 0,
     start_date: str | None = None, end_date: str | None = None,
+    file_type: str | None = None, search: str | None = None,
 ) -> list[dict]:
-    """Fetch files from per-user table, with optional pagination and date filter."""
+    """Fetch files from per-user table, with optional pagination and filters."""
     await ensure_table(db, user_id)
     table = _table_name(user_id)
     try:
@@ -82,6 +83,10 @@ async def get_user_files(
             sql += f" AND receivedAt >= '{start_date}T00:00:00'"
         if end_date:
             sql += f" AND receivedAt <= '{end_date}T23:59:59'"
+        if file_type:
+            sql += f" AND type = '{file_type}'"
+        if search:
+            sql += f" AND name LIKE '%{search}%'"
         sql += " ORDER BY receivedAt DESC"
         if size > 0:
             sql += f" LIMIT {size} OFFSET {page * size}"
@@ -187,7 +192,8 @@ async def clear_user_files(
 
 
 async def count_user_files(
-    db: AsyncSession, user_id: int, start_date: str | None = None, end_date: str | None = None
+    db: AsyncSession, user_id: int, start_date: str | None = None, end_date: str | None = None,
+    file_type: str | None = None, search: str | None = None,
 ) -> int:
     table = _table_name(user_id)
     try:
@@ -196,6 +202,10 @@ async def count_user_files(
             sql += f" AND receivedAt >= '{start_date}T00:00:00'"
         if end_date:
             sql += f" AND receivedAt <= '{end_date}T23:59:59'"
+        if file_type:
+            sql += f" AND type = '{file_type}'"
+        if search:
+            sql += f" AND name LIKE '%{search}%'"
         result = await db.execute(text(sql))
         row = result.one()
         return row[0] if row else 0
