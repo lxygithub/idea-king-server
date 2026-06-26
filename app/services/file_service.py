@@ -87,7 +87,12 @@ async def get_user_files(
             types_list = [f"'{t.strip()}'" for t in file_type.split(",") if t.strip()]
             sql += f" AND type IN ({','.join(types_list)})"
         if search:
-            sql += f" AND (name LIKE '%{search}%' OR description LIKE '%{search}%' OR tags LIKE '%{search}%')"
+            terms = [t.strip() for t in search.split() if t.strip()]
+            if terms:
+                search_clauses = []
+                for term in terms:
+                    search_clauses.append(f"(name LIKE '%{term}%' OR description LIKE '%{term}%' OR tags LIKE '%{term}%')")
+                sql += " AND (" + " AND ".join(search_clauses) + ")"
         sql += " ORDER BY receivedAt DESC"
         if size > 0:
             sql += f" LIMIT {size} OFFSET {page * size}"
@@ -207,7 +212,12 @@ async def count_user_files(
             types_list = [f"'{t.strip()}'" for t in file_type.split(",") if t.strip()]
             sql += f" AND type IN ({','.join(types_list)})"
         if search:
-            sql += f" AND (name LIKE '%{search}%' OR description LIKE '%{search}%' OR tags LIKE '%{search}%')"
+            terms = [t.strip() for t in search.split() if t.strip()]
+            if terms:
+                search_clauses = []
+                for term in terms:
+                    search_clauses.append(f"(name LIKE '%{term}%' OR description LIKE '%{term}%' OR tags LIKE '%{term}%')")
+                sql += " AND (" + " AND ".join(search_clauses) + ")"
         result = await db.execute(text(sql))
         row = result.one()
         return row[0] if row else 0
