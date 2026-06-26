@@ -84,7 +84,8 @@ async def get_user_files(
         if end_date:
             sql += f" AND receivedAt <= '{end_date}T23:59:59'"
         if file_type:
-            sql += f" AND type = '{file_type}'"
+            types_list = [f"'{t.strip()}'" for t in file_type.split(",") if t.strip()]
+            sql += f" AND type IN ({','.join(types_list)})"
         if search:
             sql += f" AND name LIKE '%{search}%'"
         sql += " ORDER BY receivedAt DESC"
@@ -203,7 +204,8 @@ async def count_user_files(
         if end_date:
             sql += f" AND receivedAt <= '{end_date}T23:59:59'"
         if file_type:
-            sql += f" AND type = '{file_type}'"
+            types_list = [f"'{t.strip()}'" for t in file_type.split(",") if t.strip()]
+            sql += f" AND type IN ({','.join(types_list)})"
         if search:
             sql += f" AND name LIKE '%{search}%'"
         result = await db.execute(text(sql))
