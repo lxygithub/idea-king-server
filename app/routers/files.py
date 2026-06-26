@@ -193,6 +193,21 @@ async def download_file(
             if r["id"] == file_id:
                 record = r
                 break
+    # Admin: search all user tables
+    if not record and user and user.is_admin:
+        from app.services.file_service import _table_name as _tn
+        r = await db.execute(select(User))
+        for u in r.scalars().all():
+            try:
+                tbl = _tn(u.id)
+                r2 = await db.execute(text(f"SELECT * FROM {tbl} WHERE id = :id"), {"id": file_id})
+                row = r2.mappings().one_or_none()
+                if row:
+                    record = dict(row)
+                    break
+            except Exception:
+                continue
+
     if not record and request.session.get("admin_user_id"):
         admin_id = request.session["admin_user_id"]
         admin_records = await file_service.get_user_files(db, admin_id)
@@ -234,7 +249,11 @@ async def download_file(
     is_media = media_type and (media_type.startswith("image/") or media_type.startswith("video/") or media_type.startswith("audio/"))
     disp = "inline" if is_media else "attachment"
     nm = record.get("name", "file")
-    hdr = {"Content-Disposition": disp + "; filename=" + nm}
+    try:
+        nm_ascii = nm.encode("ascii", errors="replace").decode("ascii")
+    except:
+        nm_ascii = "file"
+    hdr = {"Content-Disposition": disp + "; filename="" + nm_ascii + """}
     return FileResponse(tmp_path, media_type=media_type, filename=nm, headers=hdr)
 
 
