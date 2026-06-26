@@ -108,7 +108,7 @@ async def download_thumbnail(
 
     client = _get_client()
     try:
-        resp = client.get_object(settings.s3_bucket, target)
+        resp = await s3_service.async_s3(client.get_object, settings.s3_bucket, target)
         raw = resp.read() if hasattr(resp, 'read') else resp
         if not isinstance(raw, bytes):
             raw = raw.read() if hasattr(raw, 'read') else bytes(raw)
@@ -173,8 +173,8 @@ async def upload_part(
     content = await file.read()
     client = _get_client()
     try:
-        etag = client._upload_part(
-            settings.s3_bucket, meta["s3_key"], content, {}, meta["minio_uid"], part_number,
+        etag = await s3_service.async_s3(
+            client._upload_part, settings.s3_bucket, meta["s3_key"], content, {}, meta["minio_uid"], part_number,
         )
         from minio.datatypes import Part
         meta["parts"].append(Part(part_number, etag))
@@ -201,8 +201,8 @@ async def complete_multipart_upload(
     client = _get_client()
     sorted_parts = sorted(meta["parts"], key=lambda p: p.part_number)
     try:
-        client._complete_multipart_upload(
-            settings.s3_bucket, meta["s3_key"], meta["minio_uid"], sorted_parts,
+        await s3_service.async_s3(
+            client._complete_multipart_upload, settings.s3_bucket, meta["s3_key"], meta["minio_uid"], sorted_parts,
         )
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Complete failed: {e}")
@@ -231,7 +231,7 @@ async def abort_multipart_upload(
     from app.config import settings
     client = _get_client()
     try:
-        client._abort_multipart_upload(settings.s3_bucket, meta["s3_key"], meta["minio_uid"])
+        await s3_service.async_s3(client._abort_multipart_upload, settings.s3_bucket, meta["s3_key"], meta["minio_uid"])
     except Exception:
         pass
     del _multipart_uploads[upload_id]
@@ -267,7 +267,7 @@ async def upload_file(
     file_size = len(content)
 
     s3_key = s3_service.generate_s3_key(name, user_id=user.id)
-    uploaded = s3_service.upload_file(tmp_path, s3_key)
+    uploaded = await s3_service.upload_file_async(tmp_path, s3_key)
 
     try:
         os.remove(tmp_path)
@@ -372,7 +372,7 @@ async def download_file(
     if not is_authorized:
         raise HTTPException(status_code=403, detail="Access denied")
 
-    tmp_path = s3_service.download_file(record["s3Key"])
+    tmp_path = await s3_service.download_file_async(record["s3Key"])
     if not tmp_path:
         raise HTTPException(status_code=502, detail="S3 download failed")
 

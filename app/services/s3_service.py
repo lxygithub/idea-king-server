@@ -1,3 +1,5 @@
+import asyncio
+import functools
 import hashlib
 import os
 import re
@@ -27,8 +29,8 @@ def _get_client() -> Minio:
 
 def sanitize_filename(name: str) -> str:
     """ASCII only, no special chars, max 60 chars."""
-    safe = re.sub(r'[^\x20-\x7E]', '_', name)
-    safe = re.sub(r'[<>:"/\\|?*\s]+', '_', safe)
+    safe = re.sub(r"[^\x20-\x7E]", "_", name)
+    safe = re.sub(r"[<>:\"/\|?*\s]+", "_", safe)
     return safe[:60] if len(safe) > 60 else safe
 
 
@@ -64,7 +66,6 @@ def download_file(s3_key: str) -> str | None:
     """Download file from S3 to a temp file. Returns temp path or None."""
     try:
         client = _get_client()
-        # Create temp file in system temp dir
         suffix = os.path.splitext(s3_key)[1] or ".tmp"
         fd, tmp_path = tempfile.mkstemp(suffix=suffix)
         os.close(fd)
@@ -94,3 +95,20 @@ def file_exists(s3_key: str) -> bool:
         return True
     except S3Error:
         return False
+
+
+# ========== Async wrappers for use in FastAPI async handlers ==========
+
+
+async def async_s3(fn, *args):
+    """Run synchronous S3 function in a thread pool to avoid blocking event loop."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, functools.partial(fn, *args))
+
+
+async def upload_file_async(local_path: str, s3_key: str) -> str | None:
+    return await async_s3(upload_file, local_path, s3_key)
+
+
+async def download_file_async(s3_key: str) -> str | None:
+    return await async_s3(download_file, s3_key)
