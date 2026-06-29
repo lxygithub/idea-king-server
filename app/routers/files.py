@@ -212,8 +212,25 @@ async def complete_multipart_upload(
     await file_service.update_file_s3(
         db, user.id, file_id, s3_key, meta["file_size"], meta["mime_type"],
     )
+
+    # Generate thumbnail for images/videos
+    thumb_s3_key = None
+    file_type = meta["type"]
+    mime_type = meta["mime_type"]
+    if file_type in ("image", "video") or (mime_type and (mime_type.startswith("image/") or mime_type.startswith("video/"))):
+        try:
+            from app.services.thumbnail_service import generate_and_upload_thumbnail
+            storage_id = file_service._storage_id(user.id)
+            thumb_s3_key = await generate_and_upload_thumbnail(
+                s3_key, storage_id, file_id, file_type, mime_type,
+            )
+            if thumb_s3_key:
+                await file_service.update_file_s3(db, user.id, file_id, s3_key, meta["file_size"], mime_type, thumb_s3_key=thumb_s3_key)
+        except Exception as e:
+            print(f"[upload] thumb gen failed: {e}")
+
     del _multipart_uploads[upload_id]
-    return {"success": True, "id": file_id, "s3Key": s3_key, "fileSize": meta["file_size"]}
+    return {"success": True, "id": file_id, "s3Key": s3_key, "fileSize": meta["file_size"], "thumbS3Key": thumb_s3_key}
 
 
 
@@ -282,11 +299,26 @@ async def upload_file(
 
     await file_service.update_file_s3(db, user.id, file_id, s3_key, file_size, mime_type)
 
+    # Generate thumbnail for images/videos
+    thumb_s3_key = None
+    if file_type in ("image", "video") or (mime_type and (mime_type.startswith("image/") or mime_type.startswith("video/"))):
+        try:
+            from app.services.thumbnail_service import generate_and_upload_thumbnail
+            storage_id = file_service._storage_id(user.id)
+            thumb_s3_key = await generate_and_upload_thumbnail(
+                s3_key, storage_id, file_id, file_type, mime_type,
+            )
+            if thumb_s3_key:
+                await file_service.update_file_s3(db, user.id, file_id, s3_key, file_size, mime_type, thumb_s3_key=thumb_s3_key)
+        except Exception as e:
+            print(f"[upload] thumb gen failed: {e}")
+
     return {
         "success": True,
         "id": file_id,
         "s3Key": s3_key,
         "fileSize": file_size,
+        "thumbS3Key": thumb_s3_key,
     }
 
 

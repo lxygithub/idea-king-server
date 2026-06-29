@@ -146,15 +146,22 @@ async def create_file(
 
 
 async def update_file_s3(
-    db: AsyncSession, user_id: int, file_id: str, s3_key: str, file_size: int, mime_type: str | None
+    db: AsyncSession, user_id: int, file_id: str, s3_key: str, file_size: int, mime_type: str | None,
+    thumb_s3_key: str | None = None,
 ):
-    """Update s3Key + fileSize on an existing file."""
+    """Update s3Key + fileSize (+ optional thumbS3Key) on an existing file."""
     await ensure_table(db, user_id)
     table = _table_name(user_id)
-    await db.execute(
-        text(f"UPDATE {table} SET s3Key = :k, fileSize = :sz, mimeType = :mt WHERE id = :id"),
-        {"k": s3_key, "sz": file_size, "mt": mime_type, "id": file_id},
-    )
+    if thumb_s3_key:
+        await db.execute(
+            text(f"UPDATE {table} SET s3Key = :k, fileSize = :sz, mimeType = :mt, thumbS3Key = :tk WHERE id = :id"),
+            {"k": s3_key, "sz": file_size, "mt": mime_type, "tk": thumb_s3_key, "id": file_id},
+        )
+    else:
+        await db.execute(
+            text(f"UPDATE {table} SET s3Key = :k, fileSize = :sz, mimeType = :mt WHERE id = :id"),
+            {"k": s3_key, "sz": file_size, "mt": mime_type, "id": file_id},
+        )
 
 
 async def delete_user_file(

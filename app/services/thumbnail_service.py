@@ -39,7 +39,9 @@ async def generate_and_upload_thumbnail(
         elif file_type == "video" or (mime_type and mime_type.startswith("video/")):
             return await _video_thumbnail(client, s3_key, thumb_key)
     except Exception as e:
+        import traceback
         print(f"[thumbnail] generation failed for {file_id}: {e}")
+        traceback.print_exc()
         return None
 
 
@@ -49,7 +51,7 @@ async def _image_thumbnail(client, s3_key: str, thumb_key: str) -> str | None:
 
     # Download original
     resp = client.get_object(settings.s3_bucket, s3_key)
-    img_data = resp if isinstance(resp, bytes) else resp.read()
+    img_data = resp.read() if hasattr(resp, 'read') else resp
 
     # Resize
     img = Image.open(BytesIO(img_data))
@@ -79,9 +81,9 @@ async def _video_thumbnail(client, s3_key: str, thumb_key: str) -> str | None:
 
     # Download original to temp file
     resp = client.get_object(settings.s3_bucket, s3_key)
-    raw = resp if isinstance(resp, bytes) else resp.read()
+    raw = resp.read() if hasattr(resp, 'read') else resp
     if not isinstance(raw, bytes):
-        raw = raw.read() if hasattr(raw, 'read') else bytes(raw)
+        raw = bytes(raw)
     with tempfile.NamedTemporaryFile(suffix=".video", delete=False) as tmp_in:
         tmp_in.write(raw)
         tmp_in_path = tmp_in.name
@@ -102,11 +104,11 @@ async def _video_thumbnail(client, s3_key: str, thumb_key: str) -> str | None:
         with open(tmp_out_path, "rb") as f:
             data = f.read()
 
-        # Upload to S3
+        # Upload to S3 (put_object needs file-like object)
         client.put_object(
             settings.s3_bucket,
             thumb_key,
-            data,
+            BytesIO(data),
             length=len(data),
             content_type="image/jpeg",
         )
