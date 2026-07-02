@@ -1,226 +1,309 @@
 {% extends "base.html" %}
 {% block title %}{{ view_user.username }} - 用户详情{% endblock %}
+{% block page_title %}用户: {{ view_user.username }}{% endblock %}
+
+{% block extra_css %}
+
+    .file-thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid var(--border, #e5e7eb); }
+    .file-icon { width: 40px; height: 40px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .file-icon-video { background: #fef3c7; color: #d97706; }
+    .file-icon-audio { background: #e0e7ff; color: #4f46e5; }
+    .file-icon-text { background: #e0f2fe; color: #0284c7; }
+    .file-icon-pdf { background: #fee2e2; color: #dc2626; }
+    .file-icon-default { background: #f3f4f6; color: #6b7280; }
+    .file-icon-image { background: #d1fae5; color: #059669; }
+    .type-badge { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .type-image { background: #d1fae5; color: #065f46; }
+    .type-video { background: #fef3c7; color: #92400e; }
+    .type-audio { background: #e0e7ff; color: #3730a3; }
+    .type-text { background: #e0f2fe; color: #075985; }
+    .type-other { background: #f3f4f6; color: #374151; }
+    .tag { display: inline-block; padding: 1px 6px; border-radius: 3px; background: #e0e7ff; color: #4f46e5; font-size: 10px; margin-right: 3px; }
+    .dark-mode .tag { background: rgba(79,70,229,0.2); color: #818cf8; }
+    .file-name-cell { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .table td { vertical-align: middle; }
+    .batch-bar { display: none; padding: 10px 16px; background: #e0e7ff; border-radius: 8px; margin-bottom: 12px; }
+    .dark-mode .batch-bar { background: rgba(79,70,229,0.2); }
+    .batch-bar.visible { display: flex; align-items: center; gap: 12px; }
+    .info-card { background: var(--bg-card, #fff); border-radius: 10px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border, #e5e7eb); }
+    .dark-mode .info-card { background: #0f3460; border-color: #2a2a4a; }
+
+{% endblock %}
+
 {% block content %}
-<div class="page-header">
-    <h1>用户: {{ view_user.username }}</h1>
-    {% if request.session.get('admin_is_admin') %}
-    <a href="/admin/users" class="btn">← 返回用户列表</a>
-    {% else %}
-    <a href="/admin/dashboard" class="btn">← 返回概览</a>
-    {% endif %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="/admin/users" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left mr-1"></i> 返回用户列表</a>
 </div>
 
-<div class="stats-row" style="margin-bottom:24px">
-    <div class="stat-card">
-        <div class="stat-number" style="font-size:28px">{{ view_user.id }}</div>
-        <div class="stat-label">用户 ID</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number" style="font-size:18px;font-weight:600">
-            {% if view_user.is_admin %}<span class="badge badge-admin" style="font-size:14px">管理员</span>{% else %}<span class="badge badge-user">普通用户</span>{% endif %}
+<div class="row mb-4" style="display:flex;align-items:stretch">
+    <div class="col-md-3" style="display:flex;flex-direction:column">
+        <div class="info-card text-center" style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:24px 16px;margin-bottom:0">
+            <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);margin:0 auto 12px;display:flex;align-items:center;justify-content:center">
+                <i class="fas fa-user" style="font-size:32px;color:#fff"></i>
+            </div>
+            <h5 style="margin:0 0 8px;color:#e5e7eb;font-size:16px">{{ view_user.username }}</h5>
+            {% if view_user.is_admin %}
+            <span style="display:inline-block;padding:3px 10px;border-radius:12px;background:rgba(99,102,241,0.2);color:#818cf8;font-size:11px;font-weight:500"><i class="fas fa-crown mr-1"></i>管理员</span>
+            {% else %}
+            <span style="display:inline-block;padding:3px 10px;border-radius:12px;background:rgba(107,114,128,0.2);color:#9ca3af;font-size:11px;font-weight:500">普通用户</span>
+            {% endif %}
         </div>
-        <div class="stat-label">角色</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-number" style="font-size:20px;font-weight:600;color:var(--gray-600)">{{ view_user.created_at }}</div>
-        <div class="stat-label">注册时间</div>
+    <div class="col-md-3" style="display:flex;flex-direction:column">
+        <div class="info-card" style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:20px 16px;margin-bottom:0">
+            <div style="font-size:11px;color:#9ca3af;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">用户 ID</div>
+            <div style="font-size:24px;font-weight:700;color:#e5e7eb">{{ view_user.id }}</div>
+        </div>
     </div>
-    <div class="stat-card">
-        <div class="stat-number">{{ files|length }}</div>
-        <div class="stat-label">文件数</div>
+    <div class="col-md-3" style="display:flex;flex-direction:column">
+        <div class="info-card" style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:20px 16px;margin-bottom:0">
+            <div style="font-size:11px;color:#9ca3af;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">注册时间</div>
+            <div style="font-size:14px;font-weight:600;color:#e5e7eb">{{ view_user.created_at.strftime("%Y-%m-%d") if view_user.created_at else "-" }}</div>
+            <div style="font-size:11px;color:#6b7280;margin-top:2px">{{ view_user.created_at.strftime("%H:%M") if view_user.created_at else "" }}</div>
+        </div>
+    </div>
+    <div class="col-md-3" style="display:flex;flex-direction:column">
+        <div class="info-card" style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:20px 16px;margin-bottom:0">
+            <div style="font-size:11px;color:#9ca3af;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">文件数量</div>
+            <div style="font-size:28px;font-weight:800;color:#6366f1">{{ files|length }}</div>
+        </div>
     </div>
 </div>
-
-{% if request.query_params.get('error') == 'admin_cannot_change_username' %}
-<div class="alert alert-error">管理员不可修改用户名</div>
-{% endif %}
 
 {% if request.session.get('admin_is_admin') %}
-<div class="section">
-    <h3 class="section-title">账号管理</h3>
-    <div class="stats-row" style="grid-template-columns:1fr 1fr">
+<div class="row mb-4">
+    <div class="col-md-6">
         <div class="card">
-            <div class="card-header">修改密码</div>
+            <div class="card-header"><i class="fas fa-key mr-1"></i> 修改密码</div>
             <div class="card-body">
                 <form method="post" action="/admin/users/{{ view_user.id }}/change-password">
-                    <div class="form-row">
-                        <input type="password" name="new_password" placeholder="新密码(至少6位)" required minlength="6" style="flex:1">
-                        <button type="submit" class="btn btn-primary">确认</button>
+                    <div class="input-group">
+                        <input type="password" class="form-control" name="new_password" placeholder="新密码(至少6位)" required minlength="6">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-check mr-1"></i> 确认</button>
                     </div>
                 </form>
             </div>
         </div>
-        {% if not view_user.is_admin %}
+    </div>
+    {% if not view_user.is_admin %}
+    <div class="col-md-6">
         <div class="card">
-            <div class="card-header">修改用户名</div>
+            <div class="card-header"><i class="fas fa-user-edit mr-1"></i> 修改用户名</div>
             <div class="card-body">
                 <form method="post" action="/admin/users/{{ view_user.id }}/change-username">
-                    <div class="form-row">
-                        <input type="text" name="new_username" placeholder="新用户名(至少3位)" required minlength="3" style="flex:1">
-                        <button type="submit" class="btn btn-primary">确认</button>
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="new_username" placeholder="新用户名(至少3位)" required minlength="3">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-check mr-1"></i> 确认</button>
                     </div>
                 </form>
             </div>
         </div>
-        {% endif %}
     </div>
+    {% endif %}
 </div>
 {% endif %}
 
-<div class="section">
-    <h3 class="section-title">文件列表 <span style="color:var(--gray-400);font-weight:400;font-size:14px">共 {{ files|length }} 个文件</span></h3>
-
-<div class="batch-bar" id="batchBar">
-    <input type="checkbox" class="checkbox-all" id="checkAll" onchange="toggleAll(this)">
-    <span class="count">已选 <strong id="selectedCount">0</strong> 项</span>
-    <form method="post" action="/admin/files/batch-delete" style="display:inline" id="batchForm" onsubmit="return confirmBatch()">
-        <input type="hidden" name="file_ids" id="batchIds">
-        <button type="submit" class="btn btn-sm btn-danger">🗑 批量删除</button>
-    </form>
-    <button class="btn btn-sm" onclick="clearSelection()">取消选择</button>
-</div>
-
-    <div class="table-wrap">
-    <table class="table">
-        <thead>
-            <tr>
-                <th class="checkbox-col"><input type="checkbox" class="checkbox-all" onchange="toggleAll(this)"></th>
-                <th style="width:36px">#</th>
-                <th style="width:40px"></th>
-                <th>文件名</th>
-                <th>类型</th>
-                <th>大小</th>
-                <th>标签</th>
-                <th style="width:60px">状态</th>
-                <th>接收时间</th>
-                <th style="width:130px">操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for f in files %}
-            <tr>
-                <td class="checkbox-col"><input type="checkbox" class="checkbox-item" value="{{ f.id }}" onchange="updateBatchBar()"></td>
-                <td><span class="row-num">{{ loop.index }}</span></td>
-                <td>
-                    {% if f.type == 'image' and f.s3Key %}
-                    <img src="/api/files/{{ f.id }}/download?token=admin" class="file-thumb" loading="lazy" onclick="openPreview('{{ f.id }}','image','{{ f.name|e }}')" style="cursor:pointer">
-                    {% elif f.type == 'video' %}
-                    <span class="file-icon file-icon-video">▶</span>
-                    {% elif f.type == 'audio' %}
-                    <span class="file-icon file-icon-audio">♪</span>
-                    {% elif f.type == 'text' %}
-                    <span class="file-icon file-icon-text">T</span>
-                    {% elif f.mimeType and f.mimeType.startswith('application/pdf') %}
-                    <span class="file-icon file-icon-pdf">PDF</span>
-                    {% else %}
-                    <span class="file-icon file-icon-default">📄</span>
-                    {% endif %}
-                </td>
-                <td><strong class="file-name">{{ f.name }}</strong></td>
-                <td>
-                    {% set tc = 'type-image' if f.type == 'image' else 'type-video' if f.type == 'video' else 'type-audio' if f.type == 'audio' else 'type-text' if f.type == 'text' else 'type-other' %}
-                    <span class="type-badge {{ tc }}">{{ f.type }}</span>
-                </td>
-                <td class="cell-muted">
-                    {% if f.fileSize %}
-                    {% if f.fileSize >= 1048576 %}{{ (f.fileSize / 1048576)|round(1) }} MB
-                    {% elif f.fileSize >= 1024 %}{{ (f.fileSize / 1024)|round(1) }} KB
-                    {% else %}{{ f.fileSize }} B{% endif %}
-                    {% else %}-{% endif %}
-                </td>
-                <td>
-                    {% if f.tags and f.tags|length > 0 %}
-                    <div class="tags-wrap">
-                        {% for t in f.tags[:3] %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="fas fa-folder-open mr-1"></i> 文件列表 ({{ files|length }})</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+        <table class="table table-hover mb-0" id="file-table">
+            <thead>
+                <tr>
+                    <th style="width:36px;text-align:center;vertical-align:middle;line-height:1"><input type="checkbox" style="margin:0;width:16px;height:16px;vertical-align:middle" onchange="toggleAll(this)"></th>
+                    <th style="width:40px">#</th>
+                    <th style="width:50px"></th>
+                    <th class="sortable" data-sort="name" onclick="sortBy('name')">文件名 <i class="fas fa-sort"></i></th>
+                    <th class="sortable" data-sort="type" onclick="sortBy('type')">类型 <i class="fas fa-sort"></i></th>
+                    <th class="sortable" data-sort="size" onclick="sortBy('size')">大小 <i class="fas fa-sort"></i></th>
+                    <th>标签</th>
+                    <th class="sortable" data-sort="time" onclick="sortBy('time')">时间 <i class="fas fa-sort"></i></th>
+                    <th style="width:100px">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in files %}
+                <tr data-id="{{ f.id }}" data-name="{{ f.name|e }}" data-type="{{ f.type }}" data-size="{{ f.fileSize or 0 }}" data-time="{{ f.receivedAt|e }}">
+                    <td style="text-align:center;vertical-align:middle;line-height:1;padding:10px 0"><input type="checkbox" style="margin:0;width:16px;height:16px;vertical-align:middle" class="checkbox-item" value="{{ f.id }}" onchange="updateBatchBar()"></td>
+                    <td><span class="text-muted" style="font-size:12px">{{ loop.index }}</span></td>
+                    <td>
+                        {% if f.type == "image" and f.s3Key %}
+                        <img src="/api/files/{{ f.id }}/thumbnail?token=admin" class="file-thumb" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" onclick="openPreview('{{ f.id }}','image','{{ f.name|e }}')">
+                        <div class="file-icon file-icon-image" style="display:none"><i class="fas fa-image"></i></div>
+                        {% elif f.type == "image" %}
+                        <div class="file-icon file-icon-image"><i class="fas fa-image"></i></div>
+                        {% elif f.type == "video" %}
+                        <div class="file-icon file-icon-video"><i class="fas fa-play"></i></div>
+                        {% elif f.type == "audio" %}
+                        <div class="file-icon file-icon-audio"><i class="fas fa-music"></i></div>
+                        {% elif f.type == "text" %}
+                        <div class="file-icon file-icon-text"><i class="fas fa-file-alt"></i></div>
+                        {% elif f.mimeType and f.mimeType.startswith("application/pdf") %}
+                        <div class="file-icon file-icon-pdf"><i class="fas fa-file-pdf"></i></div>
+                        {% else %}
+                        <div class="file-icon file-icon-default"><i class="fas fa-file"></i></div>
+                        {% endif %}
+                    </td>
+                    <td class="file-name-cell" title="{{ f.name|e }}">
+                        <strong style="font-size:13px">{{ f.name }}</strong>
+                    </td>
+                    <td>
+                        {% set tc = "type-image" if f.type == "image" else "type-video" if f.type == "video" else "type-audio" if f.type == "audio" else "type-text" if f.type == "text" else "type-other" %}
+                        <span class="type-badge {{ tc }}">{{ f.type }}</span>
+                    </td>
+                    <td class="text-muted" style="font-size:12px">
+                        {% if f.fileSize %}
+                        {% if f.fileSize >= 1048576 %}{{ (f.fileSize / 1048576)|round(1) }} MB
+                        {% elif f.fileSize >= 1024 %}{{ (f.fileSize / 1024)|round(1) }} KB
+                        {% else %}{{ f.fileSize }} B{% endif %}
+                        {% else %}-{% endif %}
+                    </td>
+                    <td>
+                        {% if f.tags and f.tags|length > 0 %}
+                        {% for t in f.tags[:2] %}
                         <span class="tag">{{ t }}</span>
                         {% endfor %}
-                        {% if f.tags|length > 3 %}
-                        <span class="tag-more">+{{ f.tags|length - 3 }}</span>
+                        {% if f.tags|length > 2 %}
+                        <span class="text-muted" style="font-size:10px">+{{ f.tags|length - 2 }}</span>
                         {% endif %}
-                    </div>
-                    {% else %}
-                    <span class="cell-muted">-</span>
-                    {% endif %}
-                </td>
-                <td style="text-align:center;font-size:20px">{% if f.s3Key %}☁️{% else %}❌{% endif %}</td>
-                <td class="cell-muted" style="font-size:12px;white-space:nowrap">
-                    {{ f.receivedAt|string|truncate(19, True, '') if f.receivedAt else '-' }}
-                </td>
-                <td>
-                    <div class="actions">
-                        {% if f.type == 'image' and f.s3Key %}
-                        <button class="btn btn-xs" onclick="openPreview('{{ f.id }}','image','{{ f.name|e }}')" title="预览">👁</button>
-                        {% elif f.type == 'video' and f.s3Key %}
-                        <button class="btn btn-xs" onclick="openPreview('{{ f.id }}','video','{{ f.name|e }}')" title="播放">▶</button>
-                        {% elif f.type == 'audio' and f.s3Key %}
-                        <button class="btn btn-xs" onclick="openPreview('{{ f.id }}','audio','{{ f.name|e }}')" title="播放">♪</button>
-                        {% elif f.s3Key and f.type == 'text' %}
-                        <button class="btn btn-xs" onclick="openPreview('{{ f.id }}','text','{{ f.name|e }}')" title="查看">📝</button>
-                        {% elif f.s3Key %}
-                        <a href="/api/files/{{ f.id }}/download?token=admin" class="btn btn-xs" title="下载">⬇</a>
-                        {% endif %}
-                        <button class="btn btn-xs btn-edit" title="编辑" data-id="{{ f.id }}" data-name="{{ f.name|e }}" data-tags='{{ f.tags|tojson if f.tags else "[]" }}'>✎</button>
-                        {% if request.session.get('admin_is_admin') %}
-                        <form method="post" action="/admin/files/{{ f.id }}/delete" style="display:inline" onsubmit="return confirm('确定删除?')">
-                            <button type="submit" class="btn btn-xs btn-danger" title="删除">🗑</button>
-                        </form>
-                        {% endif %}
-                    </div>
-                </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="10" class="empty">暂无文件</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                        {% else %}<span class="text-muted">-</span>{% endif %}
+                    </td>
+                    <td class="text-muted" style="font-size:12px;white-space:nowrap">
+                        {{ f.receivedAt|string|truncate(10, True, "") if f.receivedAt else "-" }}
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            {% if f.s3Key %}
+                            <button class="btn btn-outline-primary btn-sm" onclick="openPreview('{{ f.id }}','{{ f.type }}','{{ f.name|e }}')" title="预览"><i class="fas fa-eye"></i></button>
+                            {% endif %}
+                            <button class="btn btn-outline-secondary btn-sm btn-edit" title="编辑" data-id="{{ f.id }}" data-name="{{ f.name|e }}" data-tags='{{ f.tags|tojson if f.tags else "[]" }}'><i class="fas fa-edit"></i></button>
+                            <form method="post" action="/admin/files/{{ f.id }}/delete" style="display:inline" onsubmit="return confirm('确定删除?')">
+                                <button type="submit" class="btn btn-outline-danger btn-sm" title="删除"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="9" class="text-center text-muted py-4"><i class="fas fa-folder-open fa-2x mb-2 d-block"></i>暂无文件</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
     </div>
 </div>
 
 {% include "modals.html" %}
+{% endblock %}
+
+{% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.btn-edit').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            document.getElementById('editFileId').value = this.getAttribute('data-id');
-            document.getElementById('editName').value = this.getAttribute('data-name');
-            try {
-                var arr = JSON.parse(this.getAttribute('data-tags'));
-                document.getElementById('editTags').value = Array.isArray(arr) ? arr.join(', ') : '';
-            } catch(e) {
-                document.getElementById('editTags').value = '';
-            }
-            document.getElementById('editModal').style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        });
-    });
-});
 function toggleAll(src) {
-    var checked = src.checked; // 'checkAll').checked;
-    document.querySelectorAll('.checkbox-item').forEach(function(cb) { cb.checked = checked; });
+    document.querySelectorAll(".checkbox-item").forEach(cb => cb.checked = src.checked);
     updateBatchBar();
 }
 function updateBatchBar() {
-    var checked = document.querySelectorAll('.checkbox-item:checked');
-    var bar = document.getElementById('batchBar');
+    var checked = document.querySelectorAll(".checkbox-item:checked");
+    var bar = document.getElementById("batchBar");
     if (checked.length > 0) {
-        bar.classList.add('visible');
-        document.getElementById('selectedCount').textContent = checked.length;
+        bar.classList.add("visible");
+        document.getElementById("selectedCount").textContent = checked.length;
     } else {
-        bar.classList.remove('visible');
+        bar.classList.remove("visible");
     }
 }
 function clearSelection() {
-    document.querySelectorAll('.checkbox-item, .checkbox-all').forEach(function(cb) { cb.checked = false; });
-    document.getElementById('batchBar').classList.remove('visible');
+    document.querySelectorAll(".checkbox-item").forEach(cb => cb.checked = false);
+    document.getElementById("batchBar").classList.remove("visible");
 }
 function confirmBatch() {
-    var checked = document.querySelectorAll('.checkbox-item:checked');
-    if (checked.length === 0) { alert('请先选择文件'); return false; }
-    if (!confirm('确定删除选中的 ' + checked.length + ' 个文件?')) return false;
-    var ids = [];
-    checked.forEach(function(cb) { ids.push(cb.value); });
-    document.getElementById('batchIds').value = ids.join(',');
+    var checked = document.querySelectorAll(".checkbox-item:checked");
+    if (checked.length === 0) { alert("请先选择文件"); return false; }
+    if (!confirm("确定删除选中的 " + checked.length + " 个文件?")) return false;
+    document.getElementById("batchIds").value = Array.from(checked).map(cb => cb.value).join(",");
     return true;
+}
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".btn-edit").forEach(btn => {
+        btn.addEventListener("click", function() {
+            document.getElementById("editFileId").value = this.dataset.id;
+            document.getElementById("editName").value = this.dataset.name;
+            try {
+                var arr = JSON.parse(this.dataset.tags);
+                editTags = Array.isArray(arr) ? arr.slice() : [];
+            } catch(e) { editTags = []; }
+            renderEditTags();
+            new bootstrap.Modal(document.getElementById("editModal")).show();
+        });
+    });
+});
+
+// Sort functionality
+var currentSort = { field: 'time', asc: true };
+
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() { sortBy('time'); }, 100);
+});
+
+function sortBy(field) {
+    var tbody = document.querySelector('#file-table tbody');
+    var rows = Array.from(tbody.querySelectorAll('tr[data-id]'));
+    
+    if (rows.length === 0) return;
+    
+    if (currentSort.field === field) {
+        currentSort.asc = !currentSort.asc;
+    } else {
+        currentSort.field = field;
+        currentSort.asc = true;
+    }
+    
+    rows.sort(function(a, b) {
+        var aVal = getSortValue(a, field);
+        var bVal = getSortValue(b, field);
+        
+        var result = 0;
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+            result = aVal - bVal;
+        } else {
+            result = String(aVal).localeCompare(String(bVal), 'zh-CN');
+        }
+        
+        return currentSort.asc ? result : -result;
+    });
+    
+    rows.forEach(function(row) { tbody.appendChild(row); });
+    
+    document.querySelectorAll('.sortable').forEach(function(th) {
+        var icon = th.querySelector('i');
+        if (th.dataset.sort === field) {
+            icon.className = currentSort.asc ? 'fas fa-sort-up' : 'fas fa-sort-down';
+        } else {
+            icon.className = 'fas fa-sort';
+        }
+    });
+    
+    var idx = 1;
+    rows.forEach(function(row) {
+        var numSpan = row.querySelector('td:nth-child(2) span');
+        if (numSpan) numSpan.textContent = idx++;
+    });
+}
+
+function getSortValue(row, field) {
+    switch(field) {
+        case 'name':
+            return (row.dataset.name || '').toLowerCase();
+        case 'type':
+            return (row.dataset.type || '').toLowerCase();
+        case 'size':
+            return parseInt(row.dataset.size || '0');
+        case 'time':
+            return row.dataset.time || '';
+        default:
+            return '';
+    }
 }
 </script>
 {% endblock %}

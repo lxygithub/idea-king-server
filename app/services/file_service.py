@@ -16,7 +16,7 @@ def _table_name(user_id: int) -> str:
 
 # Columns shared between per-user tables and the shared table
 _COLS = (
-    "id", "name", "type", "localPath", "textContent", "sourceUri",
+    "id", "name", "title", "type", "localPath", "textContent", "sourceUri",
     "receivedAt", "mimeType", "fileSize", "s3Key", "uploadProgress",
     "uploadError", "uploadId", "uploadedParts", "tags", "description", "thumbS3Key"
 )
@@ -28,6 +28,7 @@ _PLACEHOLDERS = ", ".join(f":{c}" for c in _COLS)
 _CREATE_SQL = """CREATE TABLE IF NOT EXISTS {table} (
   id VARCHAR(64) PRIMARY KEY,
   name TEXT NOT NULL,
+  title VARCHAR(500),
   type VARCHAR(50) NOT NULL,
   localPath TEXT,
   textContent LONGTEXT,
@@ -64,6 +65,9 @@ def row_to_dict(row) -> dict[str, Any]:
             d["tags"] = json.loads(d["tags"])
         except (json.JSONDecodeError, TypeError):
             d["tags"] = []
+    # title defaults to name if empty
+    if not d.get("title"):
+        d["title"] = d.get("name", "")
     return d
 
 
@@ -91,7 +95,7 @@ async def get_user_files(
             if terms:
                 search_clauses = []
                 for term in terms:
-                    search_clauses.append(f"(name LIKE '%{term}%' OR description LIKE '%{term}%' OR tags LIKE '%{term}%')")
+                    search_clauses.append(f"(name LIKE '%{term}%' OR title LIKE '%{term}%' OR description LIKE '%{term}%' OR tags LIKE '%{term}%')")
                 sql += " AND (" + " AND ".join(search_clauses) + ")"
         sql += " ORDER BY receivedAt DESC"
         if size > 0:
@@ -105,10 +109,19 @@ async def get_user_files(
 async def get_all_files(
     db: AsyncSession, user_id: int | None = None
 ) -> list[dict]:
-    """Admin: fetch files for a specific user."""
+    """Admin: fetch all files from all users, or files for a specific user."""
     if user_id:
         return await get_user_files(db, user_id)
-    return []
+    
+    # Get all users and fetch their files
+    from sqlalchemy import select
+    from app.models.user import User
+    users = await db.execute(select(User))
+    all_files = []
+    for u in users.scalars().all():
+        files = await get_user_files(db, u.id)
+        all_files.extend(files)
+    return all_files
 
 
 async def create_file(
@@ -131,6 +144,10 @@ async def create_file(
                     data[key] = row[key]
             except Exception:
                 pass
+
+    # Set title default to name if not provided
+    if "title" not in data or not data.get("title"):
+        data["title"] = data.get("name", "")
 
     # Parse receivedAt
     if "receivedAt" in data and isinstance(data["receivedAt"], str):
@@ -180,7 +197,6 @@ async def delete_file_as_admin(
     db: AsyncSession, file_id: str
 ) -> bool:
     """Delete file from any user's table (admin only)."""
-    # Try to find which user owns this file
     from sqlalchemy import select
     from app.models.user import User
     users = await db.execute(select(User))
@@ -205,6 +221,34 @@ async def clear_user_files(
     return result.rowcount or 0
 
 
+
+async def update_file_meta(
+    db: AsyncSession, file_id: str, name: str = None, tags: str = None
+):
+    from sqlalchemy import select
+    from app.models.user import User
+    users = await db.execute(select(User))
+    for user in users.scalars().all():
+        table = _table_name(user.id)
+        try:
+            result = await db.execute(text(f"SELECT id FROM {table} WHERE id = :id"), {"id": file_id})
+            if result.fetchone():
+                updates = []
+                params = {"id": file_id}
+                if name is not None:
+                    updates.append("name = :name")
+                    params["name"] = name
+                if tags is not None:
+                    updates.append("tags = :tags")
+                    params["tags"] = tags
+                if updates:
+                    set_clause = ", ".join(updates)
+                    await db.execute(text(f"UPDATE {table} SET {set_clause} WHERE id = :id"), params)
+                return True
+        except Exception:
+            continue
+    return False
+
 async def count_user_files(
     db: AsyncSession, user_id: int, start_date: str | None = None, end_date: str | None = None,
     file_type: str | None = None, search: str | None = None,
@@ -224,7 +268,7 @@ async def count_user_files(
             if terms:
                 search_clauses = []
                 for term in terms:
-                    search_clauses.append(f"(name LIKE '%{term}%' OR description LIKE '%{term}%' OR tags LIKE '%{term}%')")
+                    search_clauses.append(f"(name LIKE '%{term}%' OR title LIKE '%{term}%' OR description LIKE '%{term}%' OR tags LIKE '%{term}%')")
                 sql += " AND (" + " AND ".join(search_clauses) + ")"
         result = await db.execute(text(sql))
         row = result.one()

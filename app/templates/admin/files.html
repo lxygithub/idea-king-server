@@ -55,23 +55,23 @@
 <div class="card">
     <div class="card-body p-0">
         <div class="table-responsive">
-        <table class="table table-hover mb-0">
+        <table class="table table-hover mb-0" id="file-table">
             <thead>
                 <tr>
                     <th style="width:36px;text-align:center;vertical-align:middle;line-height:1"><input type="checkbox" style="margin:0;width:16px;height:16px;vertical-align:middle" onchange="toggleAll(this)"></th>
                     <th style="width:40px">#</th>
                     <th style="width:50px"></th>
-                    <th>文件名</th>
-                    <th>类型</th>
-                    <th>大小</th>
+                    <th class="sortable" data-sort="name" onclick="sortBy('name')">文件名 <i class="fas fa-sort"></i></th>
+                    <th class="sortable" data-sort="type" onclick="sortBy('type')">类型 <i class="fas fa-sort"></i></th>
+                    <th class="sortable" data-sort="size" onclick="sortBy('size')">大小 <i class="fas fa-sort"></i></th>
                     <th>标签</th>
-                    <th>时间</th>
+                    <th class="sortable" data-sort="time" onclick="sortBy('time')">时间 <i class="fas fa-sort"></i></th>
                     <th style="width:100px">操作</th>
                 </tr>
             </thead>
             <tbody>
                 {% for f in files %}
-                <tr>
+                <tr data-id="{{ f.id }}" data-name="{{ f.name|e }}" data-type="{{ f.type }}" data-size="{{ f.fileSize or 0 }}" data-time="{{ f.receivedAt|e }}">
                     <td style="text-align:center;vertical-align:middle;line-height:1;padding:10px 0"><input type="checkbox" style="margin:0;width:16px;height:16px;vertical-align:middle" class="checkbox-item" value="{{ f.id }}" onchange="updateBatchBar()"></td>
                     <td><span class="text-muted" style="font-size:12px">{{ loop.index }}</span></td>
                     <td>
@@ -130,7 +130,7 @@
                             {% if f.s3Key %}
                             <button class="btn btn-outline-primary btn-sm" onclick="openPreview('{{ f.id }}','{{ f.type }}','{{ f.name|e }}')" title="预览"><i class="fas fa-eye"></i></button>
                             {% endif %}
-                            <button class="btn btn-outline-secondary btn-sm btn-edit" title="编辑" data-id="{{ f.id }}" data-name="{{ f.name|e }}" data-tags="{{ f.tags|tojson if f.tags else '[]' }}"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-outline-secondary btn-sm btn-edit" title="编辑" data-id="{{ f.id }}" data-name="{{ f.name|e }}" data-tags='{{ f.tags|tojson if f.tags else "[]" }}'><i class="fas fa-edit"></i></button>
                             <form method="post" action="/admin/files/{{ f.id }}/delete" style="display:inline" onsubmit="return confirm('确定删除?')">
                                 <button type="submit" class="btn btn-outline-danger btn-sm" title="删除"><i class="fas fa-trash"></i></button>
                             </form>
@@ -183,11 +183,80 @@ document.addEventListener("DOMContentLoaded", function() {
             document.getElementById("editName").value = this.dataset.name;
             try {
                 var arr = JSON.parse(this.dataset.tags);
-                document.getElementById("editTags").value = Array.isArray(arr) ? arr.join(", ") : "";
-            } catch(e) { document.getElementById("editTags").value = ""; }
-            $("#editModal").modal("show");
+                editTags = Array.isArray(arr) ? arr.slice() : [];
+            } catch(e) { editTags = []; }
+            renderEditTags();
+            new bootstrap.Modal(document.getElementById("editModal")).show();
         });
     });
 });
+
+// Sort functionality
+var currentSort = { field: 'time', asc: true };
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initial sort by time descending
+    setTimeout(function() { sortBy('time'); }, 100);
+});
+
+function sortBy(field) {
+    var tbody = document.querySelector('#file-table tbody');
+    var rows = Array.from(tbody.querySelectorAll('tr[data-id]'));
+    
+    if (rows.length === 0) return;
+    
+    if (currentSort.field === field) {
+        currentSort.asc = !currentSort.asc;
+    } else {
+        currentSort.field = field;
+        currentSort.asc = true;
+    }
+    
+    rows.sort(function(a, b) {
+        var aVal = getSortValue(a, field);
+        var bVal = getSortValue(b, field);
+        
+        var result = 0;
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+            result = aVal - bVal;
+        } else {
+            result = String(aVal).localeCompare(String(bVal), 'zh-CN');
+        }
+        
+        return currentSort.asc ? result : -result;
+    });
+    
+    rows.forEach(function(row) { tbody.appendChild(row); });
+    
+    document.querySelectorAll('.sortable').forEach(function(th) {
+        var icon = th.querySelector('i');
+        if (th.dataset.sort === field) {
+            icon.className = currentSort.asc ? 'fas fa-sort-up' : 'fas fa-sort-down';
+        } else {
+            icon.className = 'fas fa-sort';
+        }
+    });
+    
+    var idx = 1;
+    rows.forEach(function(row) {
+        var numSpan = row.querySelector('td:nth-child(2) span');
+        if (numSpan) numSpan.textContent = idx++;
+    });
+}
+
+function getSortValue(row, field) {
+    switch(field) {
+        case 'name':
+            return (row.dataset.name || '').toLowerCase();
+        case 'type':
+            return (row.dataset.type || '').toLowerCase();
+        case 'size':
+            return parseInt(row.dataset.size || '0');
+        case 'time':
+            return row.dataset.time || '';
+        default:
+            return '';
+    }
+}
 </script>
 {% endblock %}

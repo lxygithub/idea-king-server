@@ -711,3 +711,26 @@ a:hover { color: var(--primary-dark); }
 .table td:last-child .actions {
     justify-content: flex-end;
 }
+
+/* ===========================
+   Sortable table headers
+   =========================== */
+.sortable {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+.sortable:hover {
+    background: var(--gray-100) !important;
+}
+.sortable i {
+    margin-left: 4px;
+    font-size: 11px;
+    color: var(--gray-400);
+}
+.sortable:hover i {
+    color: var(--primary);
+}
+body.dark-mode .sortable:hover {
+    background: rgba(255,255,255,0.05) !important;
+}

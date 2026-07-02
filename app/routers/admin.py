@@ -1,3 +1,4 @@
+import json
 import os
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -156,7 +157,17 @@ async def update_file(request: Request,
     file_id: str, name: str = Form(None), tags: str = Form(None),
     db: AsyncSession = Depends(get_db), _=Depends(_require_admin)
 ):
-    await file_service.update_file_meta(db, file_id, name=name, tags=tags)
+    # Convert comma-separated tags to JSON array
+    tags_json = None
+    if tags is not None:
+        tag_list = [t.strip() for t in tags.split(",") if t.strip()]
+        tags_json = json.dumps(tag_list, ensure_ascii=False)
+    try:
+        await file_service.update_file_meta(db, file_id, name=name, tags=tags_json)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise
     return RedirectResponse(url=_get_next_url(request), status_code=303)
 
 

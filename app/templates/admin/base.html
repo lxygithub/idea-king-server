@@ -98,6 +98,12 @@
         /* Button dark mode */
         body.dark-mode .btn { background: #374151 !important; color: #e5e7eb !important; border-color: #4b5563 !important; }
         body.dark-mode .btn:hover { background: #4b5563 !important; }
+        body.dark-mode .btn-outline-primary { background: transparent !important; color: #818cf8 !important; border-color: #818cf8 !important; }
+        body.dark-mode .btn-outline-primary:hover { background: rgba(129,140,248,0.1) !important; }
+        body.dark-mode .btn-outline-secondary { background: transparent !important; color: #9ca3af !important; border-color: #6b7280 !important; }
+        body.dark-mode .btn-outline-secondary:hover { background: rgba(156,163,175,0.1) !important; }
+        body.dark-mode .btn-outline-danger { background: transparent !important; color: #f87171 !important; border-color: #f87171 !important; }
+        body.dark-mode .btn-outline-danger:hover { background: rgba(248,113,113,0.1) !important; }
         body.dark-mode .btn-xs { background: #374151 !important; color: #e5e7eb !important; }
         body.dark-mode .btn-xs:hover { background: #4b5563 !important; }
         body.dark-mode .btn-danger { background: #dc2626 !important; color: #fff !important; }
@@ -115,6 +121,17 @@
         
         /* Actions column right align */
         .table td:last-child .actions { justify-content: flex-end; }
+        .table .actions .btn,
+        .table td .actions .btn,
+        .table td:last-child .actions .btn { border-radius: 6px !important; }
+        .table .actions form .btn,
+        .table td .actions form .btn,
+        .table td:last-child .actions form .btn { border-radius: 0 6px 6px 0 !important; margin-left: -1px; }
+        .table .actions form { display: inline; margin: 0; padding: 0; border: none; background: none; }
+        
+        /* btn-group override - only fix last button */
+        .btn-group { display: flex !important; align-items: stretch !important; }
+        .btn-group .btn:last-child { border-radius: 0 6px 6px 0 !important; }
         
         /* Sidebar fix - ensure AdminLTE sidebar works */
         body.dark-mode .main-sidebar { background: #1f2337 !important; }

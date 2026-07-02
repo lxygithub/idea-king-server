@@ -3,30 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理员登录 - 点子王</title>
-    <link rel="stylesheet" href="/static/admin/style.css">
+    <title>登录 - 点子王管理后台</title>
+    <link rel="stylesheet" href="/static/admin/adminlte/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/admin/adminlte/all.min.css">
+    <link rel="stylesheet" href="/static/admin/adminlte/adminlte.min.css">
+    <style>
+        body { background: #111827; min-height: 100vh; }
+        .login-box { width: 400px; }
+        .login-card { 
+            border-radius: 16px; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5); 
+            border: 1px solid #374151;
+            background: #1f2937;
+        }
+        .login-card-body { background: #1f2937; }
+        .login-logo { 
+            width: 80px; height: 80px; 
+            background: #4f46e5; 
+            border-radius: 20px; 
+            margin: 0 auto 20px; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 36px; 
+        }
+        .login-title { font-size: 24px; font-weight: 700; color: #e5e7eb; }
+        .login-subtitle { color: #9ca3af; font-size: 14px; }
+        .input-group-text { 
+            background: #374151; 
+            border-color: #4b5563; 
+            color: #9ca3af; 
+        }
+        .form-control { 
+            background: #374151; 
+            border-color: #4b5563; 
+            color: #e5e7eb; 
+        }
+        .form-control:focus { 
+            background: #4b5563; 
+            border-color: #6366f1; 
+            color: #fff;
+            box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+        }
+        .form-control::placeholder { color: #6b7280; }
+        .btn-login { 
+            background: #4f46e5; 
+            border: none; 
+            padding: 12px; 
+            font-weight: 600; 
+        }
+        .btn-login:hover { background: #4338ca; }
+        .alert-danger { 
+            background: rgba(239, 68, 68, 0.15); 
+            color: #fca5a5; 
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+    </style>
 </head>
-<body class="login-page">
-    <div class="login-box">
-        <div class="login-logo">
-            <svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2V5a3 3 0 0 0-3-3zm-1 3a1 1 0 0 1 2 0v2h-2V5zm-4 4h10v10H7V9zm3 2v4h2v-4h-2z"/></svg>
+<body class="hold-transition login-page">
+<div class="login-box">
+    <div class="card login-card">
+        <div class="card-body login-card-body p-4">
+            <div class="login-logo">
+                <span>💡</span>
+            </div>
+            <p class="login-title text-center">点子王</p>
+            <p class="login-subtitle text-center mb-4">管理后台</p>
+
+            {% if request.query_params.get("error") %}
+            <div class="alert alert-danger"><i class="fas fa-exclamation-circle mr-1"></i> 用户名或密码错误</div>
+            {% endif %}
+
+            <form method="post" action="/admin/login">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                    </div>
+                    <input type="text" class="form-control" name="username" placeholder="用户名" required autofocus>
+                </div>
+                <div class="input-group mb-4">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                    </div>
+                    <input type="password" class="form-control" name="password" placeholder="密码" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block btn-login">
+                    <i class="fas fa-sign-in-alt mr-1"></i> 登录
+                </button>
+            </form>
         </div>
-        <h1>点子王</h1>
-        <p class="login-subtitle">管理后台</p>
-        {% if request.query_params.get('error') %}
-        <div class="alert alert-error">用户名或密码错误</div>
-        {% endif %}
-        <form method="post">
-            <div class="form-group">
-                <label for="username">用户名</label>
-                <input type="text" id="username" name="username" placeholder="请输入管理员用户名" required>
-            </div>
-            <div class="form-group">
-                <label for="password">密码</label>
-                <input type="password" id="password" name="password" placeholder="请输入密码" required>
-            </div>
-            <button type="submit" class="btn btn-primary btn-block" style="padding:12px">登录</button>
-        </form>
     </div>
+</div>
 </body>
 </html>
