@@ -685,9 +685,29 @@ a:hover { color: var(--primary-dark); }
   font-size: 14px; font-weight: 600;
   color: var(--gray-700);
 }
-.checkbox-col { width: 36px; }
+.checkbox-col { 
+    width: 36px; 
+    text-align: center; 
+    vertical-align: middle !important;
+    padding: 0 !important;
+}
+.checkbox-col input[type="checkbox"] { 
+    vertical-align: middle; 
+    margin: 0 auto;
+    display: block;
+}
 .checkbox-all, .checkbox-item {
   width: 16px; height: 16px;
   accent-color: var(--primary);
   cursor: pointer;
+}
+
+/* ===========================
+   Actions column - right align
+   =========================== */
+.table td:last-child {
+    text-align: right;
+}
+.table td:last-child .actions {
+    justify-content: flex-end;
 }
